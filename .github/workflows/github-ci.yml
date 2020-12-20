@@ -1,0 +1,22 @@
+name: Docker Image CI
+on:
+  push:
+    branches: [ github-ci ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2 
+        - name: Login to DockerHub Registry
+          run: echo ${{ secrets.DOCKERHUB_PASS }} | docker login -u ${{ secrets.DOCKERHUB_USER }} ${{ secrets.DOCKERHUB_REG }} --password-stdin
+        - name: Get the docker tag
+          id: vars
+          run: echo ::set-output name=tag::$(echo $(git log -n1 --date=format:'%y%m%d-' --format=%cd%h))
+        - name: Build nasa launch project
+          run: docker build $PWD/ --file Dockerfile --tag ${{ secrets.DOCKERHUB_USER }}/nasaproject:${{ steps.vars.outputs.tag }}
+        - name: Push the tagged Docker image
+          run: docker push ${{ secrets.DOCKERHUB_USER }}/nasaproject:${{ steps.vars.outputs.tag }}
+
